@@ -1,5 +1,5 @@
 // src/utils.js — ตัวช่วยฟอร์แมต/label ที่ใช้ร่วมกันหลายหน้า (เหมือนต้นฉบับ)
-export const VEHICLE_TYPE_LABELS = { van: 'รถตู้', sedan: 'รถเก๋ง', pickup: 'รถกระบะ', vip_van: 'รถตู้ทีบ' };
+export const VEHICLE_TYPE_LABELS = { van: 'รถตู้', sedan: 'รถเก๋ง', pickup: 'รถกระบะ', truck: 'รถบรรทุก', vip_van: 'รถตู้ VIP' };
 export const STATUS_LABELS = { pending: 'รอพิจารณา', approved: 'อนุมัติแล้ว', completed: 'ส่งรายงานแล้ว', rejected: 'ไม่อนุมัติ' };
 export const VEHICLE_STATUS_LABELS = { available: 'ว่าง', in_use: 'ไม่ว่าง', maintenance: 'ซ่อมบำรุง' };
 

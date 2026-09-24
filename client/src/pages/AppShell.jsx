@@ -10,15 +10,7 @@ import ApprovalQueue from './ApprovalQueue.jsx';
 import VehiclesAdmin from './VehiclesAdmin.jsx';
 import Reports from './Reports.jsx';
 
-const VIEW_TITLES = {
-  calendar: 'ปฏิทินการจอง',
-  'new-booking': 'คำขอใช้รถ',
-  'my-bookings': 'การจองของฝ่าย',
-  'my-trips': 'งานของฉัน',
-  approval: 'อนุมัติคำขอใช้รถ',
-  vehicles: 'จัดการรถและคนขับ',
-  reports: 'รายงาน'
-};
+const COMPANY_NAME = 'บริษัท เนแรค อาร์มส์ อินดัสตรี จำกัด';
 
 export default function AppShell() {
   const { user, vehicleTypes, refreshAll, logout } = useAppData();
@@ -155,7 +147,7 @@ export default function AppShell() {
         <div className="topbar">
           <div>
             {/* <div className="company-name">บริษัท เนแรค อาร์มส์ อินดัสตรี จำกัด</div> */}
-            <div className="view-title">{VIEW_TITLES[view]}</div>
+            <div className="view-title">{COMPANY_NAME}</div>
           </div>
           <div className="topbar-right">
             <NotificationBell onNotificationClick={openNotification} />

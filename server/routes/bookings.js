@@ -116,7 +116,7 @@ router.post('/:id/approve', requireAdmin, async (req, res, next) => {
     });
   }
   const updated = await store.updateBooking(b.id, {
-    status: 'approved', vehicleId, driverId: driverId || vehicle.driverId || null,
+    status: 'approved', vehicleId, driverId: driverId || null,
     poolWith: poolIds, approvedBy: req.user.id, approvedAt: new Date().toISOString(),
     trip: { ...b.trip, odometerStart: odometerStart ? Number(odometerStart) : vehicle.mileage }
   });
@@ -136,7 +136,7 @@ router.post('/:id/approve', requireAdmin, async (req, res, next) => {
   await store.createNotification({ userId: b.userId, type: 'approved', message: `คำขอใช้รถวันที่ ${b.date} ได้รับการอนุมัติแล้ว (${vehicle.plate})`, relatedBookingId: b.id });
 
   // แจ้งเตือนคนขับที่ได้รับมอบหมาย (ถ้ามีบัญชีล็อกอิน)
-  const finalDriverId = driverId || vehicle.driverId || null;
+  const finalDriverId = driverId || null;
   if (finalDriverId) {
     const driverProfile = await store.findDriverById(finalDriverId);
     const driverUser = driverProfile && driverProfile.userId ? await store.findUserById(driverProfile.userId) : null;

@@ -48,7 +48,6 @@ export default function MyBookings({ onEdit, refreshKey }) {
       <div className="page-head">
         <div>
           <h1>การจองรถทั้งหมด</h1>
-          <div className="sub">ประวัติและสถานะคำขอใช้รถทุกฝ่าย — แก้ไข/ยกเลิกได้เฉพาะรายการของคุณเอง</div>
         </div>
       </div>
       <div className="tabs">

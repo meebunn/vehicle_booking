@@ -5,12 +5,11 @@ import { useAppData } from '../context/AppDataContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { VEHICLE_TYPE_LABELS, VEHICLE_STATUS_LABELS, fmtMoney } from '../utils.js';
 
-function VehicleModal({ vehicle, vehicleTypes, drivers, onClose, onSaved }) {
+function VehicleModal({ vehicle, vehicleTypes, onClose, onSaved }) {
   const showToast = useToast();
   const [plate, setPlate] = useState(vehicle ? vehicle.plate : '');
   const [type, setType] = useState(vehicle ? vehicle.type : (vehicleTypes[0] ? vehicleTypes[0].id : ''));
   const [status, setStatus] = useState(vehicle ? vehicle.status : 'available');
-  const [driverId, setDriverId] = useState(vehicle && vehicle.driverId ? vehicle.driverId : '');
   const [mileage, setMileage] = useState(vehicle ? vehicle.mileage : 0);
   const [fuelCardNo, setFuelCardNo] = useState(vehicle ? vehicle.fuelCardNo || '' : '');
   const [fuelLimit, setFuelLimit] = useState(vehicle ? vehicle.fuelLimit : 5000);
@@ -22,7 +21,7 @@ function VehicleModal({ vehicle, vehicleTypes, drivers, onClose, onSaved }) {
   async function save() {
     if (!plate.trim()) { showToast('กรุณากรอกทะเบียนรถ', 'error'); return; }
     const payload = {
-      plate: plate.trim(), type, status, driverId: driverId || null,
+      plate: plate.trim(), type, status,
       mileage: Number(mileage) || 0, fuelCardNo: fuelCardNo.trim(), fuelLimit: Number(fuelLimit) || 0,
       fuelUsed: Number(fuelUsed) || 0, tollCardNo: tollCardNo.trim(), tollLimit: Number(tollLimit) || 0, tollUsed: Number(tollUsed) || 0
     };
@@ -51,13 +50,6 @@ function VehicleModal({ vehicle, vehicleTypes, drivers, onClose, onSaved }) {
             {['available', 'in_use', 'maintenance'].map((s) => <option key={s} value={s}>{VEHICLE_STATUS_LABELS[s]}</option>)}
           </select>
         </div>
-        <div className="field full">
-          <label>คนขับประจำ</label>
-          <select value={driverId} onChange={(e) => setDriverId(e.target.value)}>
-            <option value="">-- ไม่ระบุ --</option>
-            {drivers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-        </div>
         <div className="field"><label>เลขไมล์ปัจจุบัน (กม.)</label><input type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} /></div>
         <div className="field"><label>เลขบัตรน้ำมัน</label><input value={fuelCardNo} onChange={(e) => setFuelCardNo(e.target.value)} /></div>
         <div className="field"><label>วงเงินบัตรน้ำมัน (บาท)</label><input type="number" value={fuelLimit} onChange={(e) => setFuelLimit(e.target.value)} /></div>
@@ -70,18 +62,17 @@ function VehicleModal({ vehicle, vehicleTypes, drivers, onClose, onSaved }) {
   );
 }
 
-function DriverModal({ driver, vehicles, onClose, onSaved }) {
+function DriverModal({ driver, onClose, onSaved }) {
   const showToast = useToast();
   const [name, setName] = useState(driver ? driver.name : '');
   const [phone, setPhone] = useState(driver ? driver.phone || '' : '');
   const [licenseNo, setLicenseNo] = useState(driver ? driver.licenseNo || '' : '');
-  const [vehicleId, setVehicleId] = useState(driver && driver.vehicleId ? driver.vehicleId : '');
   const [username, setUsername] = useState(driver && driver.username ? driver.username : '');
   const [password, setPassword] = useState('');
 
   async function save() {
     if (!name.trim()) { showToast('กรุณากรอกชื่อคนขับ', 'error'); return; }
-    const payload = { name: name.trim(), phone: phone.trim(), licenseNo: licenseNo.trim(), vehicleId: vehicleId || null };
+    const payload = { name: name.trim(), phone: phone.trim(), licenseNo: licenseNo.trim() };
     if (username.trim()) payload.username = username.trim();
     if (password) payload.password = password;
     try {
@@ -99,13 +90,6 @@ function DriverModal({ driver, vehicles, onClose, onSaved }) {
         <div className="field full"><label>ชื่อ-นามสกุล *</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="field"><label>เบอร์โทรศัพท์</label><input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div className="field"><label>เลขที่ใบขับขี่</label><input value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></div>
-        <div className="field full">
-          <label>รถประจำ</label>
-          <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
-            <option value="">-- ไม่ระบุ --</option>
-            {vehicles.map((v) => <option key={v.id} value={v.id}>{v.plate}</option>)}
-          </select>
-        </div>
       </div>
       <div className="section-title" style={{ marginTop: 18, fontSize: 13 }}>บัญชีเข้าสู่ระบบสำหรับคนขับ</div>
       <div className="hint-text" style={{ marginTop: -6 }}>
@@ -204,7 +188,7 @@ export default function VehiclesAdmin() {
           <table>
             <thead>
               <tr>
-                <th>ทะเบียน</th><th>ประเภท</th><th>สถานะ</th><th>คนขับ</th><th>เลขไมล์</th>
+                <th>ทะเบียน</th><th>ประเภท</th><th>สถานะ</th><th>เลขไมล์</th>
                 <th>บัตรน้ำมัน (ใช้/วงเงิน)</th><th>ทางด่วน (ใช้/วงเงิน)</th><th>จัดการ</th>
               </tr>
             </thead>
@@ -217,7 +201,6 @@ export default function VehiclesAdmin() {
                     <td><b>{v.plate}</b></td>
                     <td><span className={`legend-dot dot-${v.type}`} style={{ display: 'inline-block' }} /> {VEHICLE_TYPE_LABELS[v.type] || v.type}</td>
                     <td><span className={`badge badge-${v.status}`}>{VEHICLE_STATUS_LABELS[v.status] || v.status}</span></td>
-                    <td>{v.driverName || '-'}</td>
                     <td>{fmtMoney(v.mileage)} กม.</td>
                     <td style={{ minWidth: 130 }}>
                       ฿{fmtMoney(v.fuelUsed)} / ฿{fmtMoney(v.fuelLimit)}
@@ -248,15 +231,13 @@ export default function VehiclesAdmin() {
           <div className="table-wrap card">
             <table>
               <thead>
-                <tr><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>เลขที่ใบขับขี่</th><th>รถประจำ</th><th>บัญชีเข้าสู่ระบบ</th><th>จัดการ</th></tr>
+                <tr><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>เลขที่ใบขับขี่</th><th>บัญชีเข้าสู่ระบบ</th><th>จัดการ</th></tr>
               </thead>
               <tbody>
                 {drivers.map((d) => {
-                  const vh = vehicles.find((v) => v.id === d.vehicleId);
                   return (
                     <tr key={d.id}>
                       <td>{d.name}</td><td>{d.phone || '-'}</td><td>{d.licenseNo || '-'}</td>
-                      <td>{vh ? vh.plate : '-'}</td>
                       <td>{d.hasLogin ? <span className="badge badge-available">{d.username}</span> : <span className="badge badge-maintenance">ยังไม่มีบัญชี</span>}</td>
                       <td>
                         <button className="btn btn-outline btn-sm" onClick={() => setDriverModal(d)}>แก้ไข</button>{' '}
@@ -274,7 +255,7 @@ export default function VehiclesAdmin() {
       {vehicleModal && (
         <VehicleModal
           vehicle={vehicleModal === 'new' ? null : vehicleModal}
-          vehicleTypes={vehicleTypes} drivers={drivers}
+          vehicleTypes={vehicleTypes}
           onClose={() => setVehicleModal(null)}
           onSaved={() => { setVehicleModal(null); refreshAll(); }}
         />
@@ -282,7 +263,6 @@ export default function VehiclesAdmin() {
       {driverModal && (
         <DriverModal
           driver={driverModal === 'new' ? null : driverModal}
-          vehicles={vehicles}
           onClose={() => setDriverModal(null)}
           onSaved={() => { setDriverModal(null); refreshAll(); }}
         />
