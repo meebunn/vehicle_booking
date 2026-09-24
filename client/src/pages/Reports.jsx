@@ -1,24 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Api from '../api.js';
 import Modal from '../components/Modal.jsx';
+import TripReportSummary from '../components/TripReportSummary.jsx';
 import { VEHICLE_TYPE_LABELS, fmtDateThai, fmtMoney } from '../utils.js';
-
-function ReceiptGroup({ label, items }) {
-  return (
-    <>
-      <div className="lbl">{label}</div>
-      <div style={{ marginBottom: 10 }}>
-        {items.length === 0
-          ? <span style={{ color: 'var(--gray-400)' }}>ไม่มีไฟล์แนบ</span>
-          : items.map((r) => (
-            <a key={r.filename} href={r.url} target="_blank" rel="noreferrer" className="receipt-chip">
-              📎 {r.filename.endsWith('.pdf') ? 'ไฟล์ PDF' : 'ดูรูป'}
-            </a>
-          ))}
-      </div>
-    </>
-  );
-}
 
 export default function Reports({ reportFocus }) {
   const [summary, setSummary] = useState([]);
@@ -109,9 +93,9 @@ export default function Reports({ reportFocus }) {
                   <td>{t.trip && t.trip.tollCost != null ? `฿${fmtMoney(t.trip.tollCost)}` : '-'}</td>
                   <td>
                     {t.trip && t.trip.completedAt
-                      ? (receipts.length
-                        ? <button className="btn btn-outline btn-sm" onClick={() => setReceiptsTrip(t)}>📎 {receipts.length} ไฟล์</button>
-                        : <span style={{ color: 'var(--gray-400)' }}>ไม่มีไฟล์แนบ</span>)
+                      ? <button className="btn btn-outline btn-sm" onClick={() => setReceiptsTrip(t)}>
+                        ดูรายงาน{receipts.length > 0 ? ` (${receipts.length} ไฟล์)` : ''}
+                      </button>
                       : <span className="badge badge-pending">ยังไม่ส่งรายงาน</span>}
                   </td>
                 </tr>
@@ -127,9 +111,7 @@ export default function Reports({ reportFocus }) {
           <div style={{ fontSize: 13, color: 'var(--gray-600)', marginBottom: 12 }}>
             {receiptsTrip.destination} — {fmtDateThai(receiptsTrip.date)}
           </div>
-          <ReceiptGroup label="สลิป/ใบเสร็จค่าน้ำมัน" items={(receiptsTrip.trip.receipts || []).filter((r) => r.type === 'fuel')} />
-          <ReceiptGroup label="สลิป/ใบเสร็จค่าทางด่วน" items={(receiptsTrip.trip.receipts || []).filter((r) => r.type === 'toll')} />
-          {receiptsTrip.trip.notes && <><div className="lbl">หมายเหตุจากผู้ขับ</div><div>{receiptsTrip.trip.notes}</div></>}
+          <TripReportSummary booking={receiptsTrip} />
         </Modal>
       )}
     </section>

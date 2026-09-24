@@ -31,6 +31,7 @@ export default function AppShell() {
   const [approvalBookingId, setApprovalBookingId] = useState(null);
   const [calendarFocus, setCalendarFocus] = useState(null);
   const [reportFocus, setReportFocus] = useState(null);
+  const [tripFocus, setTripFocus] = useState(null);
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
@@ -73,6 +74,11 @@ export default function AppShell() {
       setView('calendar');
       return;
     }
+    if (notification.type === 'assigned' && notification.relatedBookingId) {
+      setTripFocus({ bookingId: notification.relatedBookingId, openedAt: Date.now() });
+      setView('my-trips');
+      return;
+    }
     if (notification.type === 'trip_report' && notification.relatedBookingId) {
       setReportFocus({ bookingId: notification.relatedBookingId, openedAt: Date.now() });
       setView('reports');
@@ -110,7 +116,7 @@ export default function AppShell() {
           <div className="nav-group">
             <div className="nav-group-title">เมนูของฉัน</div>
             <button className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => goTo('calendar')}>ปฏิทินการจอง</button>
-            <button className={`nav-item ${view === 'my-bookings' ? 'active' : ''}`} onClick={() => goTo('my-bookings')}>การจองของฝ่าย</button>
+            <button className={`nav-item ${view === 'my-bookings' ? 'active' : ''}`} onClick={() => goTo('my-bookings')}>การจองรถทั้งหมด</button>
           </div>
         )}
 
@@ -183,7 +189,7 @@ export default function AppShell() {
             <NewBookingForm editingBooking={editingBooking} onDone={afterBookingSaved} onCancel={() => goTo(isDriver ? 'my-trips' : 'calendar')} />
           )}
           {view === 'my-bookings' && <MyBookings onEdit={startEdit} refreshKey={refreshKey} />}
-          {view === 'my-trips' && <MyTrips onBadgeChange={setTripsBadge} />}
+          {view === 'my-trips' && <MyTrips onBadgeChange={setTripsBadge} tripFocus={tripFocus} />}
           {view === 'approval' && <ApprovalQueue onBadgeChange={setPendingBadge} focusBookingId={approvalBookingId} />}
           {view === 'vehicles' && <VehiclesAdmin />}
           {view === 'reports' && <Reports reportFocus={reportFocus} />}

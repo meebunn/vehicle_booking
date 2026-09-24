@@ -20,6 +20,7 @@ export default function TripReportModal({ booking, onClose, onSaved }) {
   const trip = booking.trip || {};
   const isEdit = !!trip.completedAt;
 
+  const [odometerStart, setOdometerStart] = useState(trip.odometerStart ?? '');
   const [odometerEnd, setOdometerEnd] = useState(trip.odometerEnd ?? '');
   const [fuelCost, setFuelCost] = useState(trip.fuelCost || '');
   const [tollCost, setTollCost] = useState(trip.tollCost || '');
@@ -44,6 +45,7 @@ export default function TripReportModal({ booking, onClose, onSaved }) {
         Promise.all(tollFiles.map(readFileAsDataURL))
       ]);
       await Api.post(`/api/bookings/${booking.id}/trip-report`, {
+        odometerStart: Number(odometerStart),
         odometerEnd: Number(odometerEnd),
         fuelCost: Number(fuelCost) || 0,
         fuelReceipts,
@@ -80,11 +82,11 @@ export default function TripReportModal({ booking, onClose, onSaved }) {
       <div className="form-grid">
         <div className="field">
           <label>เลขไมล์เริ่มต้น</label>
-          <input type="number" value={trip.odometerStart != null ? trip.odometerStart : '-'} disabled />
+          <input type="number" min="0" value={odometerStart} onChange={(e) => setOdometerStart(e.target.value)} />
         </div>
         <div className="field">
           <label>เลขไมล์สิ้นสุด *</label>
-          <input type="number" min={trip.odometerStart || 0} value={odometerEnd} onChange={(e) => setOdometerEnd(e.target.value)} />
+          <input type="number" min={odometerStart || 0} value={odometerEnd} onChange={(e) => setOdometerEnd(e.target.value)} />
         </div>
 
         <div className="field">

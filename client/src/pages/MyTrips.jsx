@@ -4,7 +4,7 @@ import BookingDetailModal from '../components/BookingDetailModal.jsx';
 import TripReportModal from '../components/TripReportModal.jsx';
 import { VEHICLE_TYPE_LABELS, fmtDateThai } from '../utils.js';
 
-export default function MyTrips({ onBadgeChange }) {
+export default function MyTrips({ onBadgeChange, tripFocus }) {
   const [trips, setTrips] = useState([]);
   const [detailBooking, setDetailBooking] = useState(null);
   const [reportBooking, setReportBooking] = useState(null);
@@ -16,6 +16,12 @@ export default function MyTrips({ onBadgeChange }) {
   }, [onBadgeChange]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!tripFocus?.bookingId) return;
+    const booking = trips.find((item) => item.id === tripFocus.bookingId);
+    if (booking) setDetailBooking(booking);
+  }, [tripFocus, trips]);
 
   return (
     <section className="view active">

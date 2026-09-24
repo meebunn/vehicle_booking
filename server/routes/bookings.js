@@ -14,7 +14,7 @@ async function notifyAdmins(message, bookingId) {
 
 // รายการคำขอจองทั้งหมด
 // - แอดมิน เห็นทุกคน เสมอ
-// - พนักงาน (employee) เห็นเฉพาะการจองของ "คนในฝ่ายเดียวกัน" เท่านั้น
+// - พนักงาน (employee) เห็นคำขอของฝ่ายตัวเอง และเห็นรายการที่อนุมัติแล้วของทุกฝ่าย
 // - คนขับ (driver) เห็นเฉพาะงานที่ตัวเองถูกมอบหมาย (ไม่ใช่คนจอง)
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -27,11 +27,9 @@ router.get('/', requireAuth, async (req, res, next) => {
     return res.json({ bookings: await store.listBookingsByDriver(profile.id) });
   }
   if (req.query.all === '1') {
-    return res.json({ bookings: req.user.role === 'admin'
-      ? await store.listApprovedBookings()
-      : await store.listBookingsByDepartment(req.user.department) });
+    return res.json({ bookings: await store.listApprovedBookings() });
   }
-  res.json({ bookings: await store.listBookingsByDepartment(req.user.department) });
+  res.json({ bookings: await store.listBookingsForEmployee(req.user.department) });
   } catch (error) { next(error); }
 });
 
@@ -178,13 +176,16 @@ router.post('/:id/trip-report', requireAuth, async (req, res, next) => {
     isAssignedDriver = !!profile && profile.id === b.driverId;
   }
   if (!isAdmin && !isAssignedDriver) return res.status(403).json({ error: 'ไม่มีสิทธิ์ส่งรายงานสำหรับรายการนี้ (เฉพาะคนขับที่ได้รับมอบหมายหรือผู้ดูแลระบบ)' });
-  if (b.status !== 'approved') return res.status(400).json({ error: 'ส่งรายงานได้เฉพาะรายการที่ได้รับการอนุมัติแล้วเท่านั้น' });
+  if (!['approved', 'completed'].includes(b.status)) return res.status(400).json({ error: 'ส่งรายงานได้เฉพาะรายการที่ได้รับการอนุมัติแล้วเท่านั้น' });
 
-  const { odometerEnd, notes, fuelCost, fuelReceipts, tollCount, tollCost, tollReceipts } = req.body;
-  const odoStart = b.trip.odometerStart || 0;
+  const { odometerStart, odometerEnd, notes, fuelCost, fuelReceipts, tollCount, tollCost, tollReceipts } = req.body;
+  const odoStart = Number(odometerStart);
   const odoEnd = Number(odometerEnd);
-  if (!odoEnd || odoEnd < odoStart) {
-    return res.status(400).json({ error: `เลขไมล์ปลายทางไม่ถูกต้อง (ต้องมากกว่าเลขไมล์เริ่มต้น ${odoStart} กม.)` });
+  if (!Number.isFinite(odoStart) || odoStart < 0) {
+    return res.status(400).json({ error: 'เลขไมล์เริ่มต้นไม่ถูกต้อง' });
+  }
+  if (!Number.isFinite(odoEnd) || odoEnd < odoStart) {
+    return res.status(400).json({ error: `เลขไมล์ปลายทางไม่ถูกต้อง (ต้องไม่น้อยกว่าเลขไมล์เริ่มต้น ${odoStart} กม.)` });
   }
 
   // บันทึกไฟล์แนบ (สลิป/ใบเสร็จ) ลงดิสก์จริง
@@ -213,9 +214,10 @@ router.post('/:id/trip-report', requireAuth, async (req, res, next) => {
   const finalReceipts = [...finalFuelReceipts, ...finalTollReceipts];
 
   const updated = await store.updateBooking(b.id, {
+    status: 'completed',
     trip: {
       ...b.trip,
-      odometerEnd: odoEnd, distanceKm,
+      odometerStart: odoStart, odometerEnd: odoEnd, distanceKm,
       fuelCost: Number(fuelCost) || 0, tollCount: Number(tollCount) || 0, tollCost: Number(tollCost) || 0,
       notes: (notes || '').trim(),
       receipts: finalReceipts,

@@ -9,6 +9,7 @@ const TABS = [
   { status: '', label: 'ทั้งหมด' },
   { status: 'pending', label: 'รอพิจารณา' },
   { status: 'approved', label: 'อนุมัติแล้ว' },
+  { status: 'completed', label: 'ส่งรายงานแล้ว' },
   { status: 'rejected', label: 'ไม่อนุมัติ' }
 ];
 
@@ -17,6 +18,7 @@ export default function MyBookings({ onEdit, refreshKey }) {
   const showToast = useToast();
   const [bookings, setBookings] = useState([]);
   const [tab, setTab] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
   const [detailBooking, setDetailBooking] = useState(null);
 
   async function load() {
@@ -36,20 +38,30 @@ export default function MyBookings({ onEdit, refreshKey }) {
     }
   }
 
-  const rows = tab ? bookings.filter((b) => b.status === tab) : bookings;
+  const departments = [...new Set(bookings.map((b) => b.department).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
+  const rows = bookings.filter((b) => (
+    (!tab || b.status === tab) && (!departmentFilter || b.department === departmentFilter)
+  ));
 
   return (
     <section className="view active">
       <div className="page-head">
         <div>
-          <h1>การจองของฝ่าย {user.department || ''}</h1>
-          <div className="sub">ประวัติและสถานะคำขอใช้รถของคนในฝ่าย {user.department || ''} — แก้ไข/ยกเลิกได้เฉพาะรายการของคุณเอง</div>
+          <h1>การจองรถทั้งหมด</h1>
+          <div className="sub">ประวัติและสถานะคำขอใช้รถทุกฝ่าย — แก้ไข/ยกเลิกได้เฉพาะรายการของคุณเอง</div>
         </div>
       </div>
       <div className="tabs">
         {TABS.map((t) => (
           <div key={t.status} className={`tab-btn ${tab === t.status ? 'active' : ''}`} onClick={() => setTab(t.status)}>{t.label}</div>
         ))}
+      </div>
+      <div className="field" style={{ maxWidth: 320, marginBottom: 16 }}>
+        <label htmlFor="department-filter">กรองตามฝ่าย</label>
+        <select id="department-filter" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
+          <option value="">ทุกฝ่าย</option>
+          {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+        </select>
       </div>
       <div className="card">
         <div className="table-wrap">
@@ -88,7 +100,7 @@ export default function MyBookings({ onEdit, refreshKey }) {
                           <button className="btn btn-danger btn-sm" onClick={() => cancelBooking(b.id)}>ยกเลิก</button>
                         </>
                       )}
-                      {b.status === 'approved' && (
+                      {['approved', 'completed'].includes(b.status) && (
                         b.trip && b.trip.completedAt
                           ? <span className="badge" style={{ background: '#e8effd', color: '#2451b0' }}>ส่งรายงานแล้ว</span>
                           : <span className="badge badge-pending">รอคนขับส่งรายงาน</span>
