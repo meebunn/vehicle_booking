@@ -8,10 +8,24 @@ export default function Reports({ reportFocus }) {
   const [summary, setSummary] = useState([]);
   const [trips, setTrips] = useState([]);
   const [receiptsTrip, setReceiptsTrip] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    Api.get('/api/reports/summary').then(({ summary }) => setSummary(summary));
-    Api.get('/api/reports/trip-log').then(({ trips }) => setTrips(trips));
+    let active = true;
+    Promise.all([Api.get('/api/reports/summary'), Api.get('/api/reports/trip-log')])
+      .then(([summaryResponse, tripsResponse]) => {
+        if (!active) return;
+        setSummary(summaryResponse.summary || []);
+        setTrips(tripsResponse.trips || []);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -34,6 +48,8 @@ export default function Reports({ reportFocus }) {
         </div>
       </div>
 
+      {error && <div className="error-msg">โหลดรายงานไม่สำเร็จ: {error}</div>}
+
       <div className="stat-grid">
         <div className="stat-card"><div className="stat-label">ค่าน้ำมันรวม</div><div className="stat-value">฿{fmtMoney(totalFuel)}</div></div>
         <div className="stat-card"><div className="stat-label">ค่าทางด่วนรวม</div><div className="stat-value">฿{fmtMoney(totalToll)}</div></div>
@@ -48,7 +64,11 @@ export default function Reports({ reportFocus }) {
             <tr><th>ทะเบียน</th><th>ประเภท</th><th>ค่าน้ำมัน</th><th>ค่าทางด่วน</th><th>ค่าซ่อมบำรุง</th><th>รวมค่าใช้จ่าย</th><th>จำนวนทริป</th><th>ระยะทางรวม (กม.)</th></tr>
           </thead>
           <tbody>
-            {summary.map((r) => (
+            {loading && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--gray-400)' }}>กำลังโหลดข้อมูล...</td></tr>}
+            {!loading && !error && summary.length === 0 && (
+              <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--gray-400)' }}>ยังไม่มีข้อมูล</td></tr>
+            )}
+            {!loading && summary.map((r) => (
               <tr key={r.vehicleId}>
                 <td><b>{r.plate}</b></td>
                 <td>{VEHICLE_TYPE_LABELS[r.type] || r.type}</td>
