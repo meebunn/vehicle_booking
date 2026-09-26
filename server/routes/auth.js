@@ -10,6 +10,10 @@ function publicUser(u) {
 }
 
 const COOKIE_OPTS = { httpOnly: true, sameSite: 'lax', maxAge: 8 * 60 * 60 * 1000 }; // 8 ชั่วโมง
+function cookieOptions(req) {
+  const secure = req.headers['x-forwarded-proto'] === 'https' || req.secure;
+  return { httpOnly: true, sameSite: secure ? 'none' : 'lax', secure, maxAge: 8 * 60 * 60 * 1000 };
+}
 
 router.post('/login', async (req, res, next) => {
   try {
@@ -19,7 +23,7 @@ router.post('/login', async (req, res, next) => {
     return res.status(401).json({ error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
   }
   const sid = createSession(user.id);
-  res.cookie('sid', sid, COOKIE_OPTS);
+    res.cookie('sid', sid, cookieOptions(req));
   res.json({ user: publicUser(user) });
   } catch (error) { next(error); }
 });
