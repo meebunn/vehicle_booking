@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from './Modal.jsx';
-import Api from '../api.js';
+import Api, { getApiUrl } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
 import { readFileAsDataURL, fmtDateThai } from '../utils.js';
 
@@ -9,7 +9,7 @@ const MAX_SIZE = 6 * 1024 * 1024;
 function ReceiptChips({ items }) {
   if (!items.length) return <span style={{ color: 'var(--gray-400)' }}>ยังไม่มีไฟล์แนบ</span>;
   return items.map((r) => (
-    <a key={r.filename} href={r.url} target="_blank" rel="noreferrer" className="receipt-chip">
+    <a key={r.filename} href={getApiUrl(r.url)} target="_blank" rel="noreferrer" className="receipt-chip">
       📎 {r.filename.endsWith('.pdf') ? 'ไฟล์ PDF' : 'ดูรูป'}
     </a>
   ));

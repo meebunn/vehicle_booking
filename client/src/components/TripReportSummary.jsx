@@ -1,4 +1,5 @@
 import React from 'react';
+import { getApiUrl } from '../api.js';
 import { fmtDateTimeThai, fmtMoney } from '../utils.js';
 
 function ReceiptLinks({ items }) {
@@ -6,7 +7,7 @@ function ReceiptLinks({ items }) {
   return (
     <>
       {items.map((r) => (
-        <a key={r.filename} href={r.url} target="_blank" rel="noreferrer" className="receipt-chip">
+        <a key={r.filename} href={getApiUrl(r.url)} target="_blank" rel="noreferrer" className="receipt-chip">
           📎 {r.filename.endsWith('.pdf') ? 'ไฟล์ PDF' : 'ดูรูป'}
         </a>
       ))}
