@@ -14,7 +14,7 @@ const TABS = [
 ];
 
 export default function MyBookings({ onEdit, refreshKey }) {
-  const { user } = useAppData();
+  const { user, departments } = useAppData();
   const showToast = useToast();
   const [bookings, setBookings] = useState([]);
   const [tab, setTab] = useState('');
@@ -27,6 +27,13 @@ export default function MyBookings({ onEdit, refreshKey }) {
   }
   useEffect(() => { load(); }, [refreshKey]);
 
+  const departmentNames = [...new Set([
+    ...departments.map((department) => typeof department === 'string' ? department : department.name),
+    ...bookings.map((booking) => booking.department)
+  ])]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'th'));
+
   async function cancelBooking(id) {
     if (!confirm('ยืนยันยกเลิกคำขอใช้รถนี้หรือไม่?')) return;
     try {
@@ -38,7 +45,6 @@ export default function MyBookings({ onEdit, refreshKey }) {
     }
   }
 
-  const departments = [...new Set(bookings.map((b) => b.department).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
   const rows = bookings.filter((b) => (
     (!tab || b.status === tab) && (!departmentFilter || b.department === departmentFilter)
   ));
@@ -59,7 +65,7 @@ export default function MyBookings({ onEdit, refreshKey }) {
         <label htmlFor="department-filter">กรองตามฝ่าย</label>
         <select id="department-filter" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
           <option value="">ทุกฝ่าย</option>
-          {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+          {departmentNames.map((department) => <option key={department} value={department}>{department}</option>)}
         </select>
       </div>
       <div className="card">

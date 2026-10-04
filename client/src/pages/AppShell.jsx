@@ -95,8 +95,8 @@ export default function AppShell() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div>
-            <div className="title">เว็บแอปพลิเคชันจองรถยนต์ส่วนกลาง</div>
-            {/* <div className="subtitle">ระบบจองรถส่วนกลาง</div> */}
+            <div className="title">Smart Car Booking</div>
+            <div className="subtitle">ระบบจองรถส่วนกลาง</div>
           </div>
         </div>
 

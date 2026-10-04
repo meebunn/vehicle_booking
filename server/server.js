@@ -13,6 +13,7 @@ const bookingRoutes = require('./routes/bookings');
 const notificationRoutes = require('./routes/notifications');
 const expenseRoutes = require('./routes/expenses');
 const reportRoutes = require('./routes/reports');
+const departmentRoutes = require('./routes/departments');
 const { attachUser } = require('./middleware/auth');
 const store = require('./db/store');
 
@@ -48,6 +49,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // endpoint /api/* ที่ไม่ตรงกับ route ไหนเลย ให้ตอบ JSON 404 (กันไม่ให้หลุดไปเจอ React index.html)
 app.use('/api', (req, res) => res.status(404).json({ error: 'ไม่พบ endpoint นี้' }));

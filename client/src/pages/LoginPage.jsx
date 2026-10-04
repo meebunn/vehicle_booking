@@ -27,7 +27,8 @@ export default function LoginPage({ onLoggedIn }) {
         <div className="login-logo">
           {/* <div className="icon-box">🚐</div> */}
           <div>
-            <div className="title">ระบบจองรถส่วนกลาง</div>
+            <div className="title">ระบบจองรถส่วนกลางของบริษัท</div>
+            <div className="title">เนแรค อาร์มส์ อินดัสตรี จำกัด</div>
             {/* <div className="subtitle">ระบบจองรถส่วนกลาง</div> */}
           </div>
         </div>
