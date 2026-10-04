@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Api from '../api.js';
 import { useAppData } from '../context/AppDataContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import Time24Select from '../components/Time24Select.jsx';
 
 const REASON_OPTIONS = ['ประชุมลูกค้า', 'ส่งเอกสาร/พัสดุ', 'รับ-ส่งพนักงาน', 'ตรวจงานหน้าไซต์/โรงงาน', 'อบรม/สัมมนา', 'อื่นๆ'];
 
@@ -20,7 +21,7 @@ export default function NewBookingForm({ editingBooking, onDone, onCancel }) {
   useEffect(() => {
     if (editingBooking) {
       setForm({
-        date: editingBooking.date, startTime: editingBooking.startTime, endTime: editingBooking.endTime,
+        date: editingBooking.date, startTime: editingBooking.startTime?.slice(0, 5), endTime: editingBooking.endTime?.slice(0, 5),
         destination: editingBooking.destination, reason: editingBooking.reason,
         requestedVehicleType: editingBooking.requestedVehicleType || '',
         jobDetail: editingBooking.jobDetail || '', passengers: editingBooking.passengers || 1
@@ -80,11 +81,11 @@ export default function NewBookingForm({ editingBooking, onDone, onCancel }) {
             </div>
             <div className="field">
               <label>เวลาเริ่มต้น *</label>
-              <input type="time" lang="th-TH" step="60" required value={form.startTime} onChange={(e) => set('startTime', e.target.value)} />
+              <Time24Select required value={form.startTime} onChange={(value) => set('startTime', value)} />
             </div>
             <div className="field">
               <label>เวลาสิ้นสุด *</label>
-              <input type="time" lang="th-TH" step="60" required value={form.endTime} onChange={(e) => set('endTime', e.target.value)} />
+              <Time24Select required value={form.endTime} onChange={(value) => set('endTime', value)} />
             </div>
             <div className="field full">
               <label>สถานที่ปลายทาง *</label>

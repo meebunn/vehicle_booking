@@ -19,8 +19,10 @@ const store = require('./db/store');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+const defaultOrigins = ['http://localhost:5173', 'https://vehicle-booking-lime.vercel.app'];
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',').map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...configuredOrigins])];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
