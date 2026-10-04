@@ -21,15 +21,32 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   const [typeFilter, setTypeFilter] = useState('');
   const [detailBooking, setDetailBooking] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+  const [bookingError, setBookingError] = useState('');
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const [quickForm, setQuickForm] = useState(emptyQuickForm(todayStr));
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    Api.get('/api/bookings?all=1').then(({ bookings }) => {
-      setBookings(bookings.filter((b) => b.status !== 'rejected'));
-    });
+    let active = true;
+    setLoadingBookings(true);
+    setBookingError('');
+    Api.get('/api/bookings?all=1')
+      .then(({ bookings }) => {
+        if (!active) return;
+        setBookings(bookings.filter((b) => b.status !== 'rejected'));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setBookingError(error.status === 401
+          ? 'เซสชันหมดอายุ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่'
+          : `ไม่สามารถโหลดข้อมูลปฏิทินได้${error.status ? ` (HTTP ${error.status})` : ''}`);
+      })
+      .finally(() => {
+        if (active) setLoadingBookings(false);
+      });
+    return () => { active = false; };
   }, [cursor, refreshKey]);
 
   useEffect(() => {
@@ -125,6 +142,13 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
               <div key={t.id} className="legend-item"><span className={`legend-dot dot-${t.id}`} />{t.label}</div>
             ))}
           </div>
+          {loadingBookings && <div style={{ padding: '12px 16px', color: 'var(--gray-600)', fontSize: 13 }}>กำลังโหลดข้อมูลปฏิทิน...</div>}
+          {bookingError && (
+            <div role="alert" style={{ margin: '12px 16px', padding: 12, border: '1px solid #e5a3a3', color: '#9b2c2c', background: '#fff5f5', fontSize: 13 }}>
+              <div>{bookingError}</div>
+              <button type="button" className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => setRefreshKey((key) => key + 1)}>ลองโหลดอีกครั้ง</button>
+            </div>
+          )}
           <div className="cal-toolbar">
             <button className="cal-nav-btn" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}>‹</button>
             <button className="cal-nav-btn" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}>›</button>
