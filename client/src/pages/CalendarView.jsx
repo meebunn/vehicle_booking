@@ -6,6 +6,12 @@ import { VEHICLE_TYPE_LABELS, STATUS_LABELS } from '../utils.js';
 
 const DOW = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const MONTHS_TH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+function localDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export default function CalendarView({ onNewBooking, calendarFocus }) {
   const { vehicles, vehicleTypes, drivers, refreshVehicles } = useAppData();
@@ -22,12 +28,6 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   useEffect(() => {
     let active = true;
     setLoadingBookings(true);
-  function localDateString(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
     setBookingError('');
     Api.get('/api/bookings?all=1')
       .then(({ bookings }) => {
@@ -47,6 +47,14 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   }, [cursor, refreshKey, refreshVehicles]);
 
   useEffect(() => {
+    const refreshTimer = setInterval(() => {
+      setRefreshKey((key) => key + 1);
+      refreshVehicles().catch(() => {});
+    }, 15000);
+    return () => clearInterval(refreshTimer);
+  }, [refreshVehicles]);
+
+  useEffect(() => {
     if (!calendarFocus?.bookingId) return;
     const booking = bookings.find((item) => item.id === calendarFocus.bookingId);
     if (!booking) return;
@@ -59,14 +67,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
     setDetailBooking(booking);
   }, [calendarFocus, bookings]);
 
-      const refreshTimer = setInterval(() => {
-        setRefreshKey((key) => key + 1);
-        refreshVehicles().catch(() => {});
-      }, 15000);
-      return () => {
-        active = false;
-        clearInterval(refreshTimer);
-      };
+  const cells = useMemo(() => {
     const year = cursor.getFullYear(), month = cursor.getMonth();
     const firstDay = new Date(year, month, 1);
     const startOffset = firstDay.getDay();
@@ -97,11 +98,6 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
         <div className="kpi-card">
           <div className="kpi-label">รถว่าง</div>
           <div className="kpi-value accent">{availableVehicleCount} คัน</div>
-    const todayBookings = bookings.filter((b) => b.date === todayStr).sort((a, b) => (a.startTime < b.startTime ? -1 : 1));
-    const assignedVehicleIds = new Set(todayBookings
-      .filter((b) => b.status === 'approved' && b.vehicleId)
-      .map((b) => b.vehicleId));
-    const availableVehicleCount = vehicles.filter((v) => v.status === 'available' && !assignedVehicleIds.has(v.id)).length;
           <div className="kpi-label">รออนุมัติ</div>
           <div className="kpi-value warn">{pendingCount} รายการ</div>
         </div>

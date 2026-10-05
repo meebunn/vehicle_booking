@@ -1,5 +1,6 @@
 // src/api.js — เรียก backend API (เดียวกับต้นฉบับ แต่ห่อเป็น helper สำหรับ React)
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+// Keep API requests on the frontend origin so auth cookies remain first-party.
+const API_URL = '';
 export const getApiUrl = (url) => /^https?:\/\//i.test(url) ? url : `${API_URL}${url}`;
 
 async function request(method, url, body) {
