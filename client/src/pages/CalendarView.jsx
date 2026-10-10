@@ -94,6 +94,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
     .map((b) => b.vehicleId));
   const availableVehicles = vehicles.filter((v) => v.status === 'available' && !busyVehicleIds.has(v.id));
   const availableVehicleCount = availableVehicles.length;
+  const pendingCount = bookings.filter((b) => b.status === 'pending').length;
   const busyDriverIds = new Set(todayBookings
     .filter((b) => ['approved', 'completed'].includes(b.status) && b.driverId
       && b.startTime <= currentTime && b.endTime > currentTime)
