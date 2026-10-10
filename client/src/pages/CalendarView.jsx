@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Api from '../api.js';
 import { useAppData } from '../context/AppDataContext.jsx';
 import BookingDetailModal from '../components/BookingDetailModal.jsx';
-import { VEHICLE_TYPE_LABELS } from '../utils.js';
+import { VEHICLE_TYPE_LABELS, STATUS_LABELS } from '../utils.js';
 
 const DOW = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const MONTHS_TH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
