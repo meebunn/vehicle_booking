@@ -25,6 +25,8 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [bookingError, setBookingError] = useState('');
+  const [todayStatusExpanded, setTodayStatusExpanded] = useState(false);
+  const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
 
   const todayStr = localDateString();
   const currentTime = localTimeString();
@@ -124,63 +126,78 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
 
       <div className="dashboard-status-grid">
         <section className="card dashboard-panel">
-          <div className="dashboard-panel-head">
+          <button
+            type="button"
+            className="dashboard-panel-head dashboard-panel-toggle"
+            onClick={() => setTodayStatusExpanded((expanded) => !expanded)}
+            aria-expanded={todayStatusExpanded}
+          >
             <div>
               <h2>สถานะการจองวันนี้</h2>
-              <div className="dashboard-panel-sub">ข้อมูลอัปเดตอัตโนมัติทุก 15 วินาที</div>
+              {/* <div className="dashboard-panel-sub">ข้อมูลอัปเดตอัตโนมัติทุก 15 วินาที</div> */}
             </div>
-            <span className="dashboard-date">{todayStr}</span>
-          </div>
-          <div className="booking-status-list">
-            {todayBookings.length === 0 && <div className="dashboard-empty">วันนี้ยังไม่มีรายการจอง</div>}
-            {todayBookings.map((booking) => (
-              <button key={booking.id} type="button" className="booking-status-row" onClick={() => setDetailBooking(booking)}>
-                <div className="booking-status-main">
-                  <strong>{booking.startTime}-{booking.endTime}</strong>
-                  <span>{booking.destination}</span>
-                  <small>{booking.userName}</small>
-                </div>
-                <div className="booking-status-assignment">
-                  <span>{booking.vehiclePlate || 'ยังไม่จัดรถ'}</span>
-                  <small>{booking.driverName || 'ยังไม่จัดคนขับ'}</small>
-                </div>
-                <span className={`badge badge-${booking.status}`}>{STATUS_LABELS[booking.status] || booking.status}</span>
-              </button>
-            ))}
-          </div>
+            <span className="dashboard-panel-summary">{todayStr} · {todayBookings.length} รายการ <span aria-hidden="true">{todayStatusExpanded ? '⌃' : '⌄'}</span></span>
+          </button>
+          {todayStatusExpanded && (
+            <div className="booking-status-list">
+              {todayBookings.length === 0 && <div className="dashboard-empty">วันนี้ยังไม่มีรายการจอง</div>}
+              {todayBookings.map((booking) => (
+                <button key={booking.id} type="button" className="booking-status-row" onClick={() => setDetailBooking(booking)}>
+                  <div className="booking-status-main">
+                    <strong>{booking.startTime}-{booking.endTime}</strong>
+                    <span>{booking.destination}</span>
+                    <small>{booking.userName}</small>
+                  </div>
+                  <div className="booking-status-assignment">
+                    <span>{booking.vehiclePlate || 'ยังไม่จัดรถ'}</span>
+                    <small>{booking.driverName || 'ยังไม่จัดคนขับ'}</small>
+                  </div>
+                  <span className={`badge badge-${booking.status}`}>{STATUS_LABELS[booking.status] || booking.status}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="card dashboard-panel">
-          <div className="dashboard-panel-head">
+          <button
+            type="button"
+            className="dashboard-panel-head dashboard-panel-toggle"
+            onClick={() => setAvailabilityExpanded((expanded) => !expanded)}
+            aria-expanded={availabilityExpanded}
+          >
             <div>
               <h2>รถและคนขับว่างตอนนี้</h2>
-              <div className="dashboard-panel-sub">ไม่นับรายการที่กำลังมีงานในช่วงเวลาปัจจุบัน</div>
+              {/* <div className="dashboard-panel-sub">ไม่นับรายการที่กำลังมีงานในช่วงเวลาปัจจุบัน</div> */}
             </div>
-          </div>
-          <div className="availability-columns">
-            <div>
-              <div className="availability-heading">รถว่าง ({availableVehicleCount})</div>
-              {availableVehicles.length === 0
-                ? <div className="dashboard-empty compact">ไม่มีรถว่าง</div>
-                : availableVehicles.map((vehicle) => (
-                  <div key={vehicle.id} className="availability-row">
-                    <strong>{vehicle.plate}</strong>
-                    <span>{VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}</span>
-                  </div>
-                ))}
+            <span className="dashboard-panel-summary">รถ {availableVehicleCount} คัน · คนขับ {availableDriverCount} คน <span aria-hidden="true">{availabilityExpanded ? '⌃' : '⌄'}</span></span>
+          </button>
+          {availabilityExpanded && (
+            <div className="availability-columns">
+              <div>
+                <div className="availability-heading">รถว่าง ({availableVehicleCount})</div>
+                {availableVehicles.length === 0
+                  ? <div className="dashboard-empty compact">ไม่มีรถว่าง</div>
+                  : availableVehicles.map((vehicle) => (
+                    <div key={vehicle.id} className="availability-row">
+                      <strong>{vehicle.plate}</strong>
+                      <span>{VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}</span>
+                    </div>
+                  ))}
+              </div>
+              <div>
+                <div className="availability-heading">คนขับว่าง ({availableDriverCount})</div>
+                {availableDrivers.length === 0
+                  ? <div className="dashboard-empty compact">ไม่มีคนขับว่าง</div>
+                  : availableDrivers.map((driver) => (
+                    <div key={driver.id} className="availability-row">
+                      <strong>{driver.name}</strong>
+                      <span>{driver.phone || 'พร้อมรับงาน'}</span>
+                    </div>
+                  ))}
+              </div>
             </div>
-            <div>
-              <div className="availability-heading">คนขับว่าง ({availableDriverCount})</div>
-              {availableDrivers.length === 0
-                ? <div className="dashboard-empty compact">ไม่มีคนขับว่าง</div>
-                : availableDrivers.map((driver) => (
-                  <div key={driver.id} className="availability-row">
-                    <strong>{driver.name}</strong>
-                    <span>{driver.phone || 'พร้อมรับงาน'}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
+          )}
         </section>
       </div>
 

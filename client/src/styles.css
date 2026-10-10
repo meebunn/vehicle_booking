@@ -231,6 +231,10 @@ input, select, textarea { font-family: inherit; }
 .dashboard-panel-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .dashboard-panel-sub { color: var(--gray-600); font-size: 12px; margin-top: 4px; }
 .dashboard-date { color: var(--gray-600); font-size: 12px; white-space: nowrap; }
+.dashboard-panel-toggle { width: 100%; border: 0; border-bottom: 1px solid var(--gray-200); border-radius: 0; background: white; color: inherit; padding: 0 0 14px; text-align: left; }
+.dashboard-panel-toggle:hover { background: white; }
+.dashboard-panel-summary { color: var(--gray-600); font-size: 12px; white-space: nowrap; }
+.dashboard-panel-summary span { display: inline-block; width: 14px; margin-left: 4px; color: var(--accent-dark); font-size: 15px; text-align: center; }
 .booking-status-list { display: grid; gap: 8px; padding-top: 12px; }
 .booking-status-row { width: 100%; display: grid; grid-template-columns: minmax(120px, 1.1fr) minmax(120px, .9fr) auto; align-items: center; gap: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 10px 12px; background: white; color: inherit; text-align: left; }
 .booking-status-row:hover { border-color: var(--accent); background: var(--accent-light); }
