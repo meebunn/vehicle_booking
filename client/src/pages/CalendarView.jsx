@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Api from '../api.js';
 import { useAppData } from '../context/AppDataContext.jsx';
 import BookingDetailModal from '../components/BookingDetailModal.jsx';
-import { VEHICLE_TYPE_LABELS, STATUS_LABELS } from '../utils.js';
+import { VEHICLE_TYPE_LABELS } from '../utils.js';
 
 const DOW = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const MONTHS_TH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -25,7 +25,6 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [bookingError, setBookingError] = useState('');
-  const [todayStatusExpanded, setTodayStatusExpanded] = useState(false);
   const [availabilityExpanded, setAvailabilityExpanded] = useState(false);
 
   const todayStr = localDateString();
@@ -95,7 +94,6 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
     .map((b) => b.vehicleId));
   const availableVehicles = vehicles.filter((v) => v.status === 'available' && !busyVehicleIds.has(v.id));
   const availableVehicleCount = availableVehicles.length;
-  const pendingCount = bookings.filter((b) => b.status === 'pending').length;
   const busyDriverIds = new Set(todayBookings
     .filter((b) => ['approved', 'completed'].includes(b.status) && b.driverId
       && b.startTime <= currentTime && b.endTime > currentTime)
@@ -122,83 +120,6 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
           <div className="kpi-label">คนขับพร้อม</div>
           <div className="kpi-value">{availableDriverCount} คน</div>
         </div>
-      </div>
-
-      <div className="dashboard-status-grid">
-        <section className="card dashboard-panel">
-          <button
-            type="button"
-            className="dashboard-panel-head dashboard-panel-toggle"
-            onClick={() => setTodayStatusExpanded((expanded) => !expanded)}
-            aria-expanded={todayStatusExpanded}
-          >
-            <div>
-              <h2>สถานะการจองวันนี้</h2>
-              {/* <div className="dashboard-panel-sub">ข้อมูลอัปเดตอัตโนมัติทุก 15 วินาที</div> */}
-            </div>
-            <span className="dashboard-panel-summary">{todayStr} · {todayBookings.length} รายการ <span aria-hidden="true">{todayStatusExpanded ? '⌃' : '⌄'}</span></span>
-          </button>
-          {todayStatusExpanded && (
-            <div className="booking-status-list">
-              {todayBookings.length === 0 && <div className="dashboard-empty">วันนี้ยังไม่มีรายการจอง</div>}
-              {todayBookings.map((booking) => (
-                <button key={booking.id} type="button" className="booking-status-row" onClick={() => setDetailBooking(booking)}>
-                  <div className="booking-status-main">
-                    <strong>{booking.startTime}-{booking.endTime}</strong>
-                    <span>{booking.destination}</span>
-                    <small>{booking.userName}</small>
-                  </div>
-                  <div className="booking-status-assignment">
-                    <span>{booking.vehiclePlate || 'ยังไม่จัดรถ'}</span>
-                    <small>{booking.driverName || 'ยังไม่จัดคนขับ'}</small>
-                  </div>
-                  <span className={`badge badge-${booking.status}`}>{STATUS_LABELS[booking.status] || booking.status}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="card dashboard-panel">
-          <button
-            type="button"
-            className="dashboard-panel-head dashboard-panel-toggle"
-            onClick={() => setAvailabilityExpanded((expanded) => !expanded)}
-            aria-expanded={availabilityExpanded}
-          >
-            <div>
-              <h2>รถและคนขับว่างตอนนี้</h2>
-              {/* <div className="dashboard-panel-sub">ไม่นับรายการที่กำลังมีงานในช่วงเวลาปัจจุบัน</div> */}
-            </div>
-            <span className="dashboard-panel-summary">รถ {availableVehicleCount} คัน · คนขับ {availableDriverCount} คน <span aria-hidden="true">{availabilityExpanded ? '⌃' : '⌄'}</span></span>
-          </button>
-          {availabilityExpanded && (
-            <div className="availability-columns">
-              <div>
-                <div className="availability-heading">รถว่าง ({availableVehicleCount})</div>
-                {availableVehicles.length === 0
-                  ? <div className="dashboard-empty compact">ไม่มีรถว่าง</div>
-                  : availableVehicles.map((vehicle) => (
-                    <div key={vehicle.id} className="availability-row">
-                      <strong>{vehicle.plate}</strong>
-                      <span>{VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}</span>
-                    </div>
-                  ))}
-              </div>
-              <div>
-                <div className="availability-heading">คนขับว่าง ({availableDriverCount})</div>
-                {availableDrivers.length === 0
-                  ? <div className="dashboard-empty compact">ไม่มีคนขับว่าง</div>
-                  : availableDrivers.map((driver) => (
-                    <div key={driver.id} className="availability-row">
-                      <strong>{driver.name}</strong>
-                      <span>{driver.phone || 'พร้อมรับงาน'}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </section>
       </div>
 
       <div className="calendar-full-layout">
@@ -257,6 +178,47 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
         </div>
 
       </div>
+
+      <section className="card dashboard-panel dashboard-availability-panel">
+        <button
+          type="button"
+          className="dashboard-panel-head dashboard-panel-toggle"
+          onClick={() => setAvailabilityExpanded((expanded) => !expanded)}
+          aria-expanded={availabilityExpanded}
+        >
+          <div>
+            <h2>รถและคนขับว่างตอนนี้</h2>
+            <div className="dashboard-panel-sub">ไม่นับรายการที่กำลังมีงานในช่วงเวลาปัจจุบัน</div>
+          </div>
+          <span className="dashboard-panel-summary">รถ {availableVehicleCount} คัน · คนขับ {availableDriverCount} คน <span aria-hidden="true">{availabilityExpanded ? '⌃' : '⌄'}</span></span>
+        </button>
+        {availabilityExpanded && (
+          <div className="availability-columns">
+            <div>
+              <div className="availability-heading">รถว่าง ({availableVehicleCount})</div>
+              {availableVehicles.length === 0
+                ? <div className="dashboard-empty compact">ไม่มีรถว่าง</div>
+                : availableVehicles.map((vehicle) => (
+                  <div key={vehicle.id} className="availability-row">
+                    <strong>{vehicle.plate}</strong>
+                    <span>{VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}</span>
+                  </div>
+                ))}
+            </div>
+            <div>
+              <div className="availability-heading">คนขับว่าง ({availableDriverCount})</div>
+              {availableDrivers.length === 0
+                ? <div className="dashboard-empty compact">ไม่มีคนขับว่าง</div>
+                : availableDrivers.map((driver) => (
+                  <div key={driver.id} className="availability-row">
+                    <strong>{driver.name}</strong>
+                    <span>{driver.phone || 'พร้อมรับงาน'}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {detailBooking && <BookingDetailModal booking={detailBooking} onClose={() => setDetailBooking(null)} />}
     </section>
