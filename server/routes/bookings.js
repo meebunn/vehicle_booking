@@ -33,6 +33,15 @@ router.get('/', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.get('/availability', requireAuth, async (req, res, next) => {
+  const { date, startTime, endTime, vehicleType, excludeId } = req.query;
+  if (!date || !startTime || !endTime || !vehicleType) return res.status(400).json({ error: 'กรุณาระบุวันที่ เวลา และประเภทรถ' });
+  try {
+    const availableCount = await store.getBookingAvailability(date, startTime, endTime, vehicleType, excludeId || null);
+    res.json({ availableCount });
+  } catch (error) { next(error); }
+});
+
 router.get('/:id', requireAuth, async (req, res, next) => {
   const b = await store.findBookingById(req.params.id);
   if (!b) return res.status(404).json({ error: 'ไม่พบรายการจอง' });
@@ -48,6 +57,8 @@ router.post('/', requireAuth, async (req, res, next) => {
   }
   if (b.startTime >= b.endTime) return res.status(400).json({ error: 'เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น' });
   try {
+    const availableCount = await store.getBookingAvailability(b.date, b.startTime, b.endTime, b.requestedVehicleType);
+    if (availableCount < 1) return res.status(409).json({ error: 'ไม่มีรถว่างในช่วงเวลานี้ กรุณาเลือกเวลาอื่นหรือประเภทรถอื่น' });
     const booking = await store.createBooking({ ...b, userId: req.user.id });
     await notifyAdmins(`${req.user.name} ส่งคำขอใช้รถวันที่ ${b.date} (${b.startTime}-${b.endTime})`, booking.id);
     res.status(201).json({ booking });
@@ -69,6 +80,14 @@ router.put('/:id', requireAuth, async (req, res, next) => {
   const allowedFields = ['date', 'startTime', 'endTime', 'destination', 'reason', 'jobDetail', 'passengers', 'requestedVehicleType'];
   const patch = {};
   allowedFields.forEach(f => { if (req.body[f] !== undefined) patch[f] = req.body[f]; });
+  if (patch.date || patch.startTime || patch.endTime || patch.requestedVehicleType) {
+    const date = patch.date || existing.date;
+    const startTime = patch.startTime || existing.startTime;
+    const endTime = patch.endTime || existing.endTime;
+    const vehicleType = patch.requestedVehicleType || existing.requestedVehicleType;
+    const availableCount = await store.getBookingAvailability(date, startTime, endTime, vehicleType, existing.id);
+    if (availableCount < 1) return res.status(409).json({ error: 'ไม่มีรถว่างในช่วงเวลานี้ กรุณาเลือกเวลาอื่นหรือประเภทรถอื่น' });
+  }
   const updated = await store.updateBooking(req.params.id, patch);
   res.json({ booking: updated });
 });

@@ -12,6 +12,9 @@ function localDateString(date = new Date()) {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+function localTimeString(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
+}
 
 export default function CalendarView({ onNewBooking, calendarFocus }) {
   const { vehicles, vehicleTypes, drivers, refreshVehicles } = useAppData();
@@ -24,6 +27,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   const [bookingError, setBookingError] = useState('');
 
   const todayStr = localDateString();
+  const currentTime = localTimeString();
 
   useEffect(() => {
     let active = true;
@@ -83,7 +87,13 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
   }, [cursor]);
 
   const todayBookings = bookings.filter((b) => b.date === todayStr).sort((a, b) => (a.startTime < b.startTime ? -1 : 1));
-  const availableVehicleCount = vehicles.filter((v) => v.status === 'available').length;
+  const busyVehicleIds = new Set(todayBookings
+    .filter((b) => ['approved', 'completed'].includes(b.status) && b.vehicleId
+      && b.startTime <= currentTime && b.endTime > currentTime)
+    .map((b) => b.vehicleId));
+  const pendingVehicleCount = todayBookings.filter((b) => b.status === 'pending'
+    && b.startTime <= currentTime && b.endTime > currentTime).length;
+  const availableVehicleCount = Math.max(0, vehicles.filter((v) => v.status === 'available' && !busyVehicleIds.has(v.id)).length - pendingVehicleCount);
   const pendingCount = bookings.filter((b) => b.status === 'pending').length;
   const busyDriverIds = new Set(todayBookings.filter((b) => b.status === 'approved' && b.driverId).map((b) => b.driverId));
   const availableDriverCount = Math.max(0, drivers.length - busyDriverIds.size);
@@ -96,7 +106,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
           <div className="kpi-value">{todayBookings.length} รายการ</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">รถว่าง</div>
+          <div className="kpi-label">รถว่างตอนนี้</div>
           <div className="kpi-value accent">{availableVehicleCount} คัน</div>
           <div className="kpi-label">รออนุมัติ</div>
           <div className="kpi-value warn">{pendingCount} รายการ</div>
