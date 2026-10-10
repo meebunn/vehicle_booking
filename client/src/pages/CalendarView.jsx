@@ -17,7 +17,7 @@ function localTimeString(date = new Date()) {
 }
 
 export default function CalendarView({ onNewBooking, calendarFocus }) {
-  const { vehicles, vehicleTypes, drivers, refreshVehicles } = useAppData();
+  const { user, vehicles, vehicleTypes, drivers, refreshVehicles } = useAppData();
   const [cursor, setCursor] = useState(new Date());
   const [bookings, setBookings] = useState([]);
   const [typeFilter, setTypeFilter] = useState('');
@@ -33,7 +33,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
     let active = true;
     setLoadingBookings(true);
     setBookingError('');
-    Api.get('/api/bookings?all=1')
+    Api.get(user.role === 'admin' ? '/api/bookings?all=1' : '/api/bookings')
       .then(({ bookings }) => {
         if (!active) return;
         setBookings(bookings.filter((b) => b.status !== 'rejected'));
@@ -48,7 +48,7 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
         if (active) setLoadingBookings(false);
       });
     return () => { active = false; };
-  }, [cursor, refreshKey, refreshVehicles]);
+  }, [cursor, refreshKey, refreshVehicles, user.role]);
 
   useEffect(() => {
     const refreshTimer = setInterval(() => {
@@ -91,12 +91,15 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
     .filter((b) => ['approved', 'completed'].includes(b.status) && b.vehicleId
       && b.startTime <= currentTime && b.endTime > currentTime)
     .map((b) => b.vehicleId));
-  const pendingVehicleCount = todayBookings.filter((b) => b.status === 'pending'
-    && b.startTime <= currentTime && b.endTime > currentTime).length;
-  const availableVehicleCount = Math.max(0, vehicles.filter((v) => v.status === 'available' && !busyVehicleIds.has(v.id)).length - pendingVehicleCount);
+  const availableVehicles = vehicles.filter((v) => v.status === 'available' && !busyVehicleIds.has(v.id));
+  const availableVehicleCount = availableVehicles.length;
   const pendingCount = bookings.filter((b) => b.status === 'pending').length;
-  const busyDriverIds = new Set(todayBookings.filter((b) => b.status === 'approved' && b.driverId).map((b) => b.driverId));
-  const availableDriverCount = Math.max(0, drivers.length - busyDriverIds.size);
+  const busyDriverIds = new Set(todayBookings
+    .filter((b) => ['approved', 'completed'].includes(b.status) && b.driverId
+      && b.startTime <= currentTime && b.endTime > currentTime)
+    .map((b) => b.driverId));
+  const availableDrivers = drivers.filter((driver) => !busyDriverIds.has(driver.id));
+  const availableDriverCount = availableDrivers.length;
 
   return (
     <section className="view active">
@@ -108,6 +111,8 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
         <div className="kpi-card">
           <div className="kpi-label">รถว่างตอนนี้</div>
           <div className="kpi-value accent">{availableVehicleCount} คัน</div>
+        </div>
+        <div className="kpi-card">
           <div className="kpi-label">รออนุมัติ</div>
           <div className="kpi-value warn">{pendingCount} รายการ</div>
         </div>
@@ -115,6 +120,68 @@ export default function CalendarView({ onNewBooking, calendarFocus }) {
           <div className="kpi-label">คนขับพร้อม</div>
           <div className="kpi-value">{availableDriverCount} คน</div>
         </div>
+      </div>
+
+      <div className="dashboard-status-grid">
+        <section className="card dashboard-panel">
+          <div className="dashboard-panel-head">
+            <div>
+              <h2>สถานะการจองวันนี้</h2>
+              <div className="dashboard-panel-sub">ข้อมูลอัปเดตอัตโนมัติทุก 15 วินาที</div>
+            </div>
+            <span className="dashboard-date">{todayStr}</span>
+          </div>
+          <div className="booking-status-list">
+            {todayBookings.length === 0 && <div className="dashboard-empty">วันนี้ยังไม่มีรายการจอง</div>}
+            {todayBookings.map((booking) => (
+              <button key={booking.id} type="button" className="booking-status-row" onClick={() => setDetailBooking(booking)}>
+                <div className="booking-status-main">
+                  <strong>{booking.startTime}-{booking.endTime}</strong>
+                  <span>{booking.destination}</span>
+                  <small>{booking.userName}</small>
+                </div>
+                <div className="booking-status-assignment">
+                  <span>{booking.vehiclePlate || 'ยังไม่จัดรถ'}</span>
+                  <small>{booking.driverName || 'ยังไม่จัดคนขับ'}</small>
+                </div>
+                <span className={`badge badge-${booking.status}`}>{STATUS_LABELS[booking.status] || booking.status}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="card dashboard-panel">
+          <div className="dashboard-panel-head">
+            <div>
+              <h2>รถและคนขับว่างตอนนี้</h2>
+              <div className="dashboard-panel-sub">ไม่นับรายการที่กำลังมีงานในช่วงเวลาปัจจุบัน</div>
+            </div>
+          </div>
+          <div className="availability-columns">
+            <div>
+              <div className="availability-heading">รถว่าง ({availableVehicleCount})</div>
+              {availableVehicles.length === 0
+                ? <div className="dashboard-empty compact">ไม่มีรถว่าง</div>
+                : availableVehicles.map((vehicle) => (
+                  <div key={vehicle.id} className="availability-row">
+                    <strong>{vehicle.plate}</strong>
+                    <span>{VEHICLE_TYPE_LABELS[vehicle.type] || vehicle.type}</span>
+                  </div>
+                ))}
+            </div>
+            <div>
+              <div className="availability-heading">คนขับว่าง ({availableDriverCount})</div>
+              {availableDrivers.length === 0
+                ? <div className="dashboard-empty compact">ไม่มีคนขับว่าง</div>
+                : availableDrivers.map((driver) => (
+                  <div key={driver.id} className="availability-row">
+                    <strong>{driver.name}</strong>
+                    <span>{driver.phone || 'พร้อมรับงาน'}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="calendar-full-layout">
